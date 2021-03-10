@@ -1,4 +1,4 @@
-# `RRAM`-based Inference with Pytorch
+# RRAM-based Inference with Pytorch
 
 ## Outline
 

@@ -17,7 +17,7 @@ abit=4
 mode=dorefa
 
 adc=6
-cellbit=2
+cellbit=1
 
 save_path="./save/${model}/${model}_w${wbit}_a${abit}_mode_${mode}/"
 log_file="${model}_w${wbit}_a${abit}_mode${mode}_adc${adc}bit_cell${cellbit}bit.log"

@@ -2,4 +2,5 @@ dataset/
 __pycache__/
 .vscode
 *pth.tar
-prob
+prob/
+prob/vgg8_4bit_dorefa/

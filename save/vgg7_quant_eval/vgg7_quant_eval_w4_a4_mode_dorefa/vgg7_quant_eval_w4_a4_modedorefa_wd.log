@@ -1,0 +1,101 @@
+Namespace(a_lambda=0.01, abit=4, adc_prec=6, alpha_init=10.0, batch_size=128, cellBit=2, clp=False, col_size=16, data_path='./dataset/', dataset='cifar10', epochs=200, evaluate=True, fine_tune=True, gammas=[0.1, 0.1], k=2, log_file='vgg7_quant_eval_w4_a4_modedorefa_wd.log', lr=0.1, lr_decay='step', model='vgg7_quant_eval', momentum=0.9, multiplier=1.0, ngpu=1, print_freq=1, q_mode='mean', ref='', resume='./save/vgg7_quant/vgg7_quant_w4_a4_mode_dorefa_wd1e-4/model_best.pth.tar', save_path='./save/vgg7_quant_eval/vgg7_quant_eval_w4_a4_mode_dorefa_wd/', schedule=[60, 120], subArray=128, use_cuda=True, wbit=4, weight_decay=0.0001, workers=4)
+==> Building model..
+
+VGG_quant(
+  (features): Sequential(
+    (0): QConv2d(
+      3, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False, wbit=4, abit=4
+      (weight_quant): WQ()
+      (act_quant): AQ()
+    )
+    (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (2): ReLU(inplace=True)
+    (3): Qconv2dDoreFa(
+      128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+      (weight_quant): WQ()
+      (act_quant): AQ()
+    )
+    (4): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (5): ReLU(inplace=True)
+    (6): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (7): Qconv2dDoreFa(
+      128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+      (weight_quant): WQ()
+      (act_quant): AQ()
+    )
+    (8): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (9): ReLU(inplace=True)
+    (10): Qconv2dDoreFa(
+      256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+      (weight_quant): WQ()
+      (act_quant): AQ()
+    )
+    (11): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (12): ReLU(inplace=True)
+    (13): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (14): Qconv2dDoreFa(
+      256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+      (weight_quant): WQ()
+      (act_quant): AQ()
+    )
+    (15): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (16): ReLU(inplace=True)
+    (17): Qconv2dDoreFa(
+      512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+      (weight_quant): WQ()
+      (act_quant): AQ()
+    )
+    (18): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (19): ReLU(inplace=True)
+    (20): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+  )
+  (classifier): Sequential(
+    (0): QLinear(
+      in_features=8192, out_features=1024, bias=True, wbit=4, abit=4
+      (weight_quant): WQ()
+      (act_quant): AQ()
+    )
+    (1): BatchNorm1d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (2): ReLU(inplace=True)
+    (3): QLinear(
+      in_features=1024, out_features=10, bias=True, wbit=4, abit=4
+      (weight_quant): WQ()
+      (act_quant): AQ()
+    )
+  )
+)
+name: features.0.weight | shape: [128, 3, 3, 3]
+name: features.0.act_quant.act_alpha | shape: []
+name: features.1.weight | shape: [128]
+name: features.1.bias | shape: [128]
+name: features.3.weight | shape: [128, 128, 3, 3]
+name: features.3.act_quant.act_alpha | shape: []
+name: features.4.weight | shape: [128]
+name: features.4.bias | shape: [128]
+name: features.7.weight | shape: [256, 128, 3, 3]
+name: features.7.act_quant.act_alpha | shape: []
+name: features.8.weight | shape: [256]
+name: features.8.bias | shape: [256]
+name: features.10.weight | shape: [256, 256, 3, 3]
+name: features.10.act_quant.act_alpha | shape: []
+name: features.11.weight | shape: [256]
+name: features.11.bias | shape: [256]
+name: features.14.weight | shape: [512, 256, 3, 3]
+name: features.14.act_quant.act_alpha | shape: []
+name: features.15.weight | shape: [512]
+name: features.15.bias | shape: [512]
+name: features.17.weight | shape: [512, 512, 3, 3]
+name: features.17.act_quant.act_alpha | shape: []
+name: features.18.weight | shape: [512]
+name: features.18.bias | shape: [512]
+name: classifier.0.weight | shape: [1024, 8192]
+name: classifier.0.bias | shape: [1024]
+name: classifier.0.act_quant.act_alpha | shape: []
+name: classifier.1.weight | shape: [1024]
+name: classifier.1.bias | shape: [1024]
+name: classifier.3.weight | shape: [10, 1024]
+name: classifier.3.bias | shape: [10]
+name: classifier.3.act_quant.act_alpha | shape: []
+=> loading checkpoint './save/vgg7_quant/vgg7_quant_w4_a4_mode_dorefa_wd1e-4/model_best.pth.tar'
+=> loaded checkpoint './save/vgg7_quant/vgg7_quant_w4_a4_mode_dorefa_wd1e-4/model_best.pth.tar' best acc = 92.12
+Test accuracy: 91.63

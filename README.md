@@ -64,7 +64,7 @@ print(bit_levels[0,15,15,:,:].cpu().numpy())
 [[1. 0. 0.]
  [0. 0. 0.]
  [0. 1. 1.]]
-print(bit_levels[2,15,15,:,:].cpu().numpy())
+print(bit_levels[1,15,15,:,:].cpu().numpy())
 [[1. 0. 0.]
  [0. 0. 0.]
  [0. 1. 1.]]

@@ -36,7 +36,7 @@ To run the inference, execute `vgg_cifar_eval.sh` in your terminal. You can spec
 
 ### Low-precision weight decomposition
 
-The `Qcon2dDoreFa` module will first decompose the pre-trained low precision weight into specific bit-counts before the bit-by-bit processing, from LSB to MSB. For instance, given the 4-bit weight $W$ with size $128 \times 128 \times 3 \times 3$, after the [decomposition](https://github.com/mengjian0502/TorchInference_RRAM/blob/d5b2304f7ef2929a20ad44b4cdcf23590ad02ada/models/quant/neurosim_modules.py#L11),  the weight tensor will be extended to a $ 4 \times 128 \times 128 \times 3 \times 3 $ and `saved` as an external `.pt` file under `/prob/`.  Each  $1 \times 128 \times 128 \times 3 \times 3$ corresponding the different bit-levels, from LSB to MSB. The following table summarizes the inference accuracy with different cell precisions: 
+The `Qcon2dDoreFa` module will first decompose the pre-trained low precision weight into specific bit-counts before the bit-by-bit processing, from LSB to MSB. For instance, given the 4-bit weight *W* with size 128 x 128 x 3 x 3, after the [decomposition](https://github.com/mengjian0502/TorchInference_RRAM/blob/d5b2304f7ef2929a20ad44b4cdcf23590ad02ada/models/quant/neurosim_modules.py#L11),  the weight tensor will be extended to a 4 x 128 x 128 x 3 x 3 and saved as an external `.pt` file under `/prob/`.  Each 1 x 128 x 128 x 3 x 3 corresponding the different bit-levels, from LSB to MSB. The following table summarizes the inference accuracy with different cell precisions: 
 
 | VGG7: W4/A4 | ADC Precision | Inference Acc. |
 | :---------: | :-----------: | :------------: |

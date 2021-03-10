@@ -36,7 +36,7 @@ To run the inference, execute `vgg_cifar_eval.sh` in your terminal. You can spec
 
 ### Low-precision weight decomposition
 
-The `Qcon2dDoreFa` module will first decompose the pre-trained low precision weight into specific bit-counts before the bit-by-bit processing, from LSB to MSB. For instance, given the 4-bit weight $W$ with size $128 \times 128 \times 3 \times 3$, after the [decomposition](https://github.com/mengjian0502/TorchInference_RRAM/blob/d5b2304f7ef2929a20ad44b4cdcf23590ad02ada/models/quant/neurosim_modules.py#L11),  the weight tensor will be extended to a $4 \times 128 \times 128 \times 3 \times 3$ and `saved` as an external `.pt` file under `/prob/`.  Each  $1 \times 128 \times 128 \times 3 \times 3$ corresponding the different bit-levels, from LSB to MSB. The following table summarizes the inference accuracy with different cell precisions: 
+The `Qcon2dDoreFa` module will first decompose the pre-trained low precision weight into specific bit-counts before the bit-by-bit processing, from LSB to MSB. For instance, given the 4-bit weight $W$ with size $128 \times 128 \times 3 \times 3$, after the [decomposition](https://github.com/mengjian0502/TorchInference_RRAM/blob/d5b2304f7ef2929a20ad44b4cdcf23590ad02ada/models/quant/neurosim_modules.py#L11),  the weight tensor will be extended to a $ 4 \times 128 \times 128 \times 3 \times 3 $ and `saved` as an external `.pt` file under `/prob/`.  Each  $1 \times 128 \times 128 \times 3 \times 3$ corresponding the different bit-levels, from LSB to MSB. The following table summarizes the inference accuracy with different cell precisions: 
 
 | VGG7: W4/A4 | ADC Precision | Inference Acc. |
 | :---------: | :-----------: | :------------: |
@@ -48,29 +48,33 @@ The `Qcon2dDoreFa` module will first decompose the pre-trained low precision wei
 **Example:** 4-bit Weight decomposition with 1-bit cell. 
 
 ```python
-print(list(weight_int.size()))            
+print(list(weight_int.size()))
 [128, 128, 3, 3]
 
 # 4-bit integer weight
-print(weight_int[15,15,:,:].cpu().numpy())                                                 
-[[7. 8. 8.]                                                                                                                                               
- [8. 8. 8.]                                                                                                                                               
- [8. 7. 7.]]                                                                                                                                              
+print(weight_int[15,15,:,:].cpu().numpy())
+[[7. 8. 8.]
+ [8. 8. 8.]
+ [8. 7. 7.]]
 # After decomposition
-print(list(bit_levels.size()))                                                  
+print(list(bit_levels.size()))
 [4, 128, 128, 3, 3]
 
-print(bit_levels[0,15,15,:,:].cpu().numpy())                                               
-[[1. 0. 0.]                                                                                                                                              
- [0. 0. 0.]                                                                                                                                              
- [0. 1. 1.]]                                                                                                                                              
-print(bit_levels[2,15,15,:,:].cpu().numpy())      
-[[1. 0. 0.]                                                                                                                                              
- [0. 0. 0.]                                                                                                                                               
- [0. 1. 1.]]                                                                                                                                             
-print(bit_levels[3,15,15,:,:].cpu().numpy())       
-[[0. 1. 1.]                                                                                                                                              
- [1. 1. 1.]                                                                                                                                               
+print(bit_levels[0,15,15,:,:].cpu().numpy())
+[[1. 0. 0.]
+ [0. 0. 0.]
+ [0. 1. 1.]]
+print(bit_levels[2,15,15,:,:].cpu().numpy())
+[[1. 0. 0.]
+ [0. 0. 0.]
+ [0. 1. 1.]]
+print(bit_levels[2,15,15,:,:].cpu().numpy())
+[[1. 0. 0.]
+ [0. 0. 0.]
+ [0. 1. 1.]]
+print(bit_levels[3,15,15,:,:].cpu().numpy())
+[[0. 1. 1.]
+ [1. 1. 1.]
  [1. 0. 0.]]
 ```
 

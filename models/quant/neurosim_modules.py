@@ -71,6 +71,7 @@ class Qconv2dDoreFa(nn.Conv2d):
                 bit_levels = bit_noises(weight_int, self.wbit, self.cellBit)
                 torch.save(bit_levels, f'./prob/vgg8_{self.wbit}bit_dorefa/bit_levels{self.layer_idx}_ideal.pt')          # change the directory for different models
                 self.init = False
+                import pdb;pdb.set_trace()
             else:
                 bit_levels = torch.load(f'./prob/vgg8_{self.wbit}bit_dorefa/bit_levels{self.layer_idx}_ideal.pt') 
 

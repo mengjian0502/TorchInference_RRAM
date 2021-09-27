@@ -244,6 +244,7 @@ def main():
             e_time, val_loss, test_acc, best_acc]
 
         print_table(values, columns, epoch, logger)
+        print(need_time)
 
 if __name__ == '__main__':
     main()

@@ -8,21 +8,40 @@ import torch.nn.functional as F
 from .utee import wage_quantizer
 
 def dorefa_quant(x, nbit, dequantize=True):
-    x = torch.tanh(x)
-    scale = 2**nbit - 1
+    qrange = 1.0
+    x = F.hardtanh(x, min_val=-qrange, max_val=qrange)
     
-    x = x / 2 / x.abs().max() + 1/2
+    scale = (2**nbit - 1) / qrange
+    
+    x = qrange * x / 2 / x.abs().max() + qrange/2
     xq = torch.round(x * scale)
     
     if dequantize:
         xq = xq.div(scale)
-        xq = 2 * xq - 1
+        xq = 2 * xq - qrange
     return xq
+
+def stats_quant(x, nbit, dequantize=True):
+    z_typical = {'4bit': [0.077, 1.013], '8bit':[0.027, 1.114]}
+    z = z_typical[f'{int(nbit)}bit']
+    n_lv = 2 ** (nbit - 1) - 1
+
+    m = x.abs().mean()
+    std = x.std()
+    alpha_w = 1/z[0] * std - z[1]/z[0] * m
+    
+    x = x.clamp(-alpha_w.item(), alpha_w.item())
+    scale = n_lv / alpha_w
+    
+    xq = x.mul(scale).round()
+    if dequantize:
+        xq = xq.div(scale)
+    return xq, scale
 
 class RoundQ(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input, wbit):
-        input_q = dorefa_quant(input, wbit)
+        input_q, scale = stats_quant(input, wbit)
         ctx.save_for_backward(input)
         return input_q
     
@@ -33,15 +52,26 @@ class RoundQ(torch.autograd.Function):
 
 class RoundUQ(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, input, scale): 
+    def forward(ctx, input, alpha, nbit): 
+        ctx.save_for_backward(input, alpha)
+
+        scale = (2**nbit - 1) / alpha
         input_div = input.mul(scale)
         input_q = input_div.round().div(scale)
         return input_q
 
     @staticmethod
     def backward(ctx, grad_output):
-        grad_input = grad_output.clone()
-        return grad_input, None
+        input, alpha = ctx.saved_tensors
+
+        lower_bound = input < 0
+        upper_bound = input > alpha
+
+        x_range = ~(lower_bound|upper_bound)
+
+        grad_alpha = torch.sum(grad_output * torch.ge(input, alpha).float()).view(-1)
+        grad_input = grad_output * x_range.float()
+        return grad_input, grad_alpha, None
 
 class WQ(nn.Module):
     """
@@ -63,11 +93,7 @@ class AQ(nn.Module):
 
     def forward(self, input):
         input = torch.where(input < self.act_alpha, input, self.act_alpha)
-        
-        with torch.no_grad():
-            scale = (2**self.abit - 1) / self.act_alpha 
-
-        input_q = RoundUQ.apply(input, scale)
+        input_q = RoundUQ.apply(input, self.act_alpha, self.abit)
         return input_q
 
 class QConv2d(nn.Conv2d):
@@ -83,13 +109,12 @@ class QConv2d(nn.Conv2d):
         self.abit = abit
 
     def forward(self, input):
-        if self.abit == 32:
+        if self.abit == 32 or self.in_channels == 3:
             input_q = input
         else:
             input_q = self.act_quant(input)
         
         weight_q = self.weight_quant(self.weight)
-        
         out = F.conv2d(input_q, weight_q, self.bias, self.stride, self.padding, self.dilation, self.groups)
         return out
 

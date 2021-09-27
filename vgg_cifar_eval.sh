@@ -14,14 +14,14 @@ batch_size=128
 optimizer=SGD
 wbit=4
 abit=4
-mode=dorefa
+mode=sawb
 
 adc=6
 cellbit=1
 
 save_path="./save/${model}/${model}_w${wbit}_a${abit}_mode_${mode}/"
 log_file="${model}_w${wbit}_a${abit}_mode${mode}_adc${adc}bit_cell${cellbit}bit.log"
-pretrained_model="./save/vgg7_quant/vgg7_quant_w4_a4_mode_dorefa_wd1e-4/model_best.pth.tar"
+pretrained_model="./save/vgg7_quant/vgg7_quant_w4_a4_mode_sawb_wd1e-4/model_best.pth.tar"
 
 $PYTHON -W ignore inference.py --dataset ${dataset} \
     --data_path ./dataset/ \

@@ -1,7 +1,7 @@
 
 import math
 import torch.nn as nn
-from .quant import Qconv2dDoreFa, QConv2d, QLinear
+from .quant import RRAMConv2d, QConv2d, QLinear
 
 
 def make_layers(cfg, batch_norm=False):
@@ -30,7 +30,7 @@ def make_layers_quant(cfg, batch_norm=False, wbit=4, abit=4, alpha_init=10, ADCp
             if in_channels == 3:
                 conv2d = QConv2d(in_channels, v, kernel_size=3, padding=1, bias=False, wbit=wbit, abit=abit)
             else:
-                conv2d = Qconv2dDoreFa(in_channels, v, kernel_size=3, padding=1, bias=False, 
+                conv2d = RRAMConv2d(in_channels, v, kernel_size=3, padding=1, bias=False, 
                                     wl_input=abit,wl_weight=wbit, subArray=subArray, inference=1, cellBit=cellBit, ADCprecision=ADCprecision)
             if batch_norm:
                 layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]

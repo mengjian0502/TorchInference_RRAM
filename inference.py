@@ -191,7 +191,7 @@ def main():
         # set the clipping parameter to the Qconv2d Layer
         count = 0
         for m in net.modules():
-            if isinstance(m, Qconv2dDoreFa):
+            if isinstance(m, RRAMConv2d):
                 m.layer_idx = count
                 count += 1
 

@@ -15,7 +15,7 @@ batch_size=128
 optimizer=SGD
 wbit=4
 abit=4
-mode=dorefa
+mode=sawb
 
 wd=1e-4
 lr=0.05

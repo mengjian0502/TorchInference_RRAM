@@ -34,6 +34,56 @@ def bit2cond(bitWeight, hrs, lrs):
     bitWeight = bitWeight.clamp(0)
     return bitWeight
 
+def program_noise_cond(weight_q, weight_b, dummy=False):
+    wb = torch.zeros_like(weight_b)
+
+    unit = 1.472e-4 - 5.080e-7
+    all_err = []
+    for ii in range(len(weight_q.unique())):
+        
+        if len(weight_q.unique()) == 1:
+            ii = int(weight_q.unique().item())
+
+        idx_4b = weight_q.eq(ii)
+        wb_ii = weight_b[:, idx_4b]
+        
+        # noises
+        noise = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/Level_4x16_SWIPE_250nPW_chip14_raw_in_16lvl/level{ii}_raw.npy")
+        
+        # sizes
+        _, numel = wb_ii.size()
+        
+        bit_idx = np.arange(noise.shape[0])
+        random_idx = np.random.choice(bit_idx, size=(numel))
+        
+        bit_random_noise = noise[random_idx, :].T
+        wb_cond = torch.from_numpy(bit_random_noise).float()
+        wb_cond = torch.flip(wb_cond, dims=[0])
+        cond_int = torch.round(wb_cond.div(unit))
+        if ii > 0:
+            correct = 1
+            for jj in range(10):
+                e = torch.mean(abs(cond_int[:, jj].cpu() - wb_ii[:, jj].cpu()))
+                if e == 0:
+                    correct += 1
+            err = 1 - correct/wb_ii.size(1)
+            print("Level = {}; ideal = {}; swipe={}; cond={}".format(ii, wb_ii[:, jj], cond_int[:, jj], wb_cond[:,jj]))
+            # print("Level = {}; err rate={}".format(ii, err*100))
+            all_err.append(err*100)
+        print("=========\n")
+        
+        if ii < 7:
+            wb[:, idx_4b] = cond_int.cuda()
+        else:
+            wb[:, idx_4b] = wb_ii.cuda()
+        
+        # statistics
+        hrs = wb_cond[wb_ii == 0]
+        lrs = wb_cond[wb_ii == 1]
+        
+        # print("\nLevel {}; Average HRS={}; Average LRS={}; dummy={}".format(ii, hrs.mean(), lrs.mean(), dummy))
+    return wb
+
 class RRAMConv2d(nn.Conv2d):
     r"""
     NeuroSim-based RRAM inference with low precision weights and activations
@@ -59,8 +109,8 @@ class RRAMConv2d(nn.Conv2d):
         self.act_quant = AQ(abit=wl_input, act_alpha=torch.tensor(10.0))
 
         # conductance
-        self.hrs = 1.66e-4
-        self.lrs = 1.03e-6
+        self.hrs = 3.3305e-07
+        self.lrs = 1.4584e-04
         self.nonideal_unit = self.lrs - self.hrs
     
     def _act_quant(self, input):
@@ -84,9 +134,12 @@ class RRAMConv2d(nn.Conv2d):
         wqb_list = decimal2binary(wq, bitWeight=self.wbit, cellBit=self.cellBit)
         wdb_list = decimal2binary(wd, bitWeight=self.wbit, cellBit=self.cellBit)
 
-        # swipe
-        wqb_list = bit2cond(wqb_list, hrs=self.hrs, lrs=self.lrs)
-        wdb_list = bit2cond(wdb_list, hrs=self.hrs, lrs=self.lrs)
+        # # swipe
+        # wqb_list = bit2cond(wqb_list, hrs=self.hrs, lrs=self.lrs)
+        # wdb_list = bit2cond(wdb_list, hrs=self.hrs, lrs=self.lrs)
+
+        wqb_list = program_noise_cond(wq, wqb_list, False)
+        wdb_list = program_noise_cond(wd, wdb_list, True)
 
         # input quantization
         xq, x_scale = self._act_quant(input)
@@ -151,7 +204,7 @@ class RRAMConv2d(nn.Conv2d):
 
                                 maci = outputPartial - outputOffset
                                 maci = maci.div(self.nonideal_unit)
-                                
+
                                 # additive noise
                                 macs = macs + maci * scaler
                                 

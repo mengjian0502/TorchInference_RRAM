@@ -18,6 +18,7 @@ mode=sawb
 
 adc=6
 cellbit=1
+lv=1
 
 save_path="./save/${model}/${model}_w${wbit}_a${abit}_mode_${mode}/"
 log_file="${model}_w${wbit}_a${abit}_mode${mode}_adc${adc}bit_cell${cellbit}bit.log"
@@ -36,4 +37,5 @@ $PYTHON -W ignore inference.py --dataset ${dataset} \
     --cellBit ${cellbit} \
     --adc_prec ${adc} \
     --fine_tune \
+    --swipe_ll ${lv} \
     --evaluate;

@@ -192,9 +192,6 @@ def test(testloader, net, criterion, epoch):
 
             batch_time.update(time.time() - end)
             end = time.time()
-
-            if batch_idx == 0:
-                break
     return top1.avg, losses.avg
 
 def convert_secs2time(epoch_time):

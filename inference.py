@@ -70,11 +70,12 @@ parser.add_argument('--k', type=int, default=2, help='coefficient of quantizatio
 parser.add_argument('--clp', dest='clp', action='store_true', help='using clipped relu in each stage')
 parser.add_argument('--a_lambda', type=float, default=0.01, help='The parameter of alpha L2 regularization')
 
-# ADC inference
+# RRAM inference
 parser.add_argument('--col_size', type=int, default=16, help='Column size of the RRAM')
 parser.add_argument('--cellBit', type=int, default=2, help='precision of the rram cell')
 parser.add_argument('--adc_prec', type=int, default=5, help='adc precision')
 parser.add_argument('--subArray', type=int, default=128, help='subarray size')
+parser.add_argument('--swipe_ll', type=int, default=0, help='SWIPE level')
 args = parser.parse_args()
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -154,7 +155,8 @@ def main():
     # Prepare the model
     logger.info('==> Building model..\n')
     model_cfg = getattr(models, args.model)
-    model_cfg.kwargs.update({"num_classes": num_classes, "wbit": args.wbit, "abit":args.abit, "alpha_init": args.alpha_init, "ADCprecision":args.adc_prec, "cellBit":args.cellBit})
+    model_cfg.kwargs.update({"num_classes": num_classes, "wbit": args.wbit, "abit":args.abit, 
+            "alpha_init": args.alpha_init, "ADCprecision":args.adc_prec, "cellBit":args.cellBit, "swipe_ll":args.swipe_ll})
     net = model_cfg.base(*model_cfg.args, **model_cfg.kwargs) 
 
     logger.info(net)

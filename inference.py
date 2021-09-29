@@ -75,7 +75,8 @@ parser.add_argument('--col_size', type=int, default=16, help='Column size of the
 parser.add_argument('--cellBit', type=int, default=2, help='precision of the rram cell')
 parser.add_argument('--adc_prec', type=int, default=5, help='adc precision')
 parser.add_argument('--subArray', type=int, default=128, help='subarray size')
-parser.add_argument('--swipe_ll', type=int, default=0, help='SWIPE level')
+parser.add_argument('--swipe_ll', type=int, nargs='+', default=[7,8,9],
+                    help='swipe sensitive levels')
 args = parser.parse_args()
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"

@@ -48,7 +48,8 @@ def program_noise_cond(weight_q, weight_b, hrs, lrs, swipe_ll):
         wbin_ii = weight_b[:, idx_4b]
         
         # noises
-        noise = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/Level_4x16_SWIPE_250nPW_chip14_raw_in_16lvl/level{ii}_raw.npy")
+        noise = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/noSWIPE_25Times_raw/level{ii}_raw.npy")
+        swipe = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/Level_4x16_SWIPE_250nPW_chip14_raw_in_16lvl/level{ii}_raw.npy")
         
         # sizes
         _, numel = wb_ii.size()
@@ -57,13 +58,18 @@ def program_noise_cond(weight_q, weight_b, hrs, lrs, swipe_ll):
         random_idx = np.random.choice(bit_idx, size=(numel))
         
         bit_random_noise = noise[random_idx, :].T
+        swipe_random_noise = swipe[random_idx, :].T
+
         wb_cond = torch.from_numpy(bit_random_noise).float()
+        swipe_cond = torch.from_numpy(swipe_random_noise).float()
+
         wb_cond = torch.flip(wb_cond, dims=[0])
-        # cond_int = torch.round(wb_cond.div(unit))
-        if ii == swipe_ll:
-            wb[:, idx_4b] = wb_cond.cuda()
+        swipe_cond = torch.flip(swipe_cond, dims=[0])
+
+        if not ii in swipe_ll:
+            wb[:, idx_4b] = swipe_cond.cuda()
         else:
-            wb[:, idx_4b] = wb_ii.cuda()
+            wb[:, idx_4b] = wb_cond.cuda()
         
         # # statistics
         # hrs = wb_cond[wb_ii == 0]
@@ -140,7 +146,6 @@ class RRAMConv2d(nn.Conv2d):
                     mask = torch.zeros_like(wq)
                     mask[:,:,i,j] = 1
                     xq, x_scale = self._act_quant(input)
-                    # import pdb;pdb.set_trace()
                     outputIN = torch.zeros_like(output)
                     xb_list = []
                     for z in range(int(self.abit)):
@@ -187,9 +192,9 @@ class RRAMConv2d(nn.Conv2d):
                                 scaler = cellRange**k
 
                                 maci = outputPartial - outputOffset
+                                # ADC
+                                maci = wage_quantizer.LinearQuantizeOut(maci, bit=self.ADCprecision, lb=maci.min(), ub=maci.max())
                                 maci = maci.div(self.nonideal_unit)
-
-                                # additive noise
                                 macs = macs + maci * scaler
                                 
                             total_macs = total_macs.add(macs)

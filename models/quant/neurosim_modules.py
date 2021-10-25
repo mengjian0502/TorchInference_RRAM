@@ -34,7 +34,7 @@ def bit2cond(bitWeight, hrs, lrs):
     bitWeight = bitWeight.clamp(0)
     return bitWeight
 
-def program_noise_cond(weight_q, weight_b, hrs, lrs, swipe_ll):
+def program_noise_cond(weight_q, weight_b, hrs, lrs, sensitive_lv):
     wb = torch.zeros_like(weight_b)
     weight_cond = bit2cond(weight_b, hrs, lrs)  # typical values
 
@@ -49,7 +49,16 @@ def program_noise_cond(weight_q, weight_b, hrs, lrs, swipe_ll):
         
         # noises
         noise = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/noSWIPE_25Times_raw/level{ii}_raw.npy")
-        swipe = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/Level_4x16_SWIPE_250nPW_chip14_raw_in_16lvl/level{ii}_raw.npy")
+        # swipe = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/DNN_SWIPE_101021/Level_4x16_SWIPE_250nPW_chip14_raw_in_16lvl_10091346/level{ii}_raw.npy")
+        # swipe = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/Level_4x16_SWIPE_250nPW_chip14_raw_in_16lvl/level{ii}_raw.npy")
+        
+        # rescale the programming noise with new lrs （1.66 to 1.11)
+        noise = noise * (1.11e-4/1.66e-4)
+        # swipe = swipe * (1.11e-4/1.66e-4)
+        
+        # noise = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/DNN_SWIPE_101021/Level_4x16_noSWIPE_250nPW_chip14_raw_in_16lvl_10080928/level{ii}_raw.npy")
+        swipe = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/DNN_SWIPE_102021/Level_4x16_SWIPE_250nPW_chip14_raw_in_16lvl_10201845/level{ii}_raw.npy")
+        
         
         # sizes
         _, numel = wb_ii.size()
@@ -66,10 +75,10 @@ def program_noise_cond(weight_q, weight_b, hrs, lrs, swipe_ll):
         wb_cond = torch.flip(wb_cond, dims=[0])
         swipe_cond = torch.flip(swipe_cond, dims=[0])
 
-        if not ii in swipe_ll:
-            wb[:, idx_4b] = swipe_cond.cuda()
+        if not ii in sensitive_lv:
+            wb[:, idx_4b] = swipe_cond.cuda()   # SWIPE scheme
         else:
-            wb[:, idx_4b] = wb_cond.cuda()
+            wb[:, idx_4b] = wb_cond.cuda()      # Non SWIPE scheme
         
         # # statistics
         # hrs = wb_cond[wb_ii == 0]
@@ -82,7 +91,7 @@ class RRAMConv2d(nn.Conv2d):
     NeuroSim-based RRAM inference with low precision weights and activations
     """
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, 
-                wl_input=8, wl_weight=8, subArray=128, inference=0, cellBit=1, ADCprecision=5, swipe_ll=0):
+                wl_input=8, wl_weight=8, subArray=128, inference=0, cellBit=1, ADCprecision=5, sensitive_lv=0):
         super(RRAMConv2d, self).__init__(in_channels, out_channels, kernel_size,
                                       stride, padding, dilation, groups, bias)
         self.wl_input = wl_input
@@ -103,9 +112,9 @@ class RRAMConv2d(nn.Conv2d):
 
         # conductance
         self.hrs = 1e-6
-        self.lrs = 1.66e-04
+        self.lrs = 1.11e-04
         self.nonideal_unit = self.lrs - self.hrs
-        self.swipe_ll = swipe_ll
+        self.sensitive_lv = sensitive_lv
     
     def _act_quant(self, input):
         act_alpha = self.act_quant.act_alpha 
@@ -128,8 +137,8 @@ class RRAMConv2d(nn.Conv2d):
         wqb_list = decimal2binary(wq, bitWeight=self.wbit, cellBit=self.cellBit)
         wdb_list = decimal2binary(wd, bitWeight=self.wbit, cellBit=self.cellBit)
 
-        wqb_list = program_noise_cond(wq, wqb_list, hrs=self.hrs, lrs=self.lrs, swipe_ll=self.swipe_ll)
-        wdb_list = program_noise_cond(wd, wdb_list, hrs=self.hrs, lrs=self.lrs, swipe_ll=self.swipe_ll)
+        wqb_list = program_noise_cond(wq, wqb_list, hrs=self.hrs, lrs=self.lrs, sensitive_lv=self.sensitive_lv)
+        wdb_list = program_noise_cond(wd, wdb_list, hrs=self.hrs, lrs=self.lrs, sensitive_lv=self.sensitive_lv)
 
         # input quantization
         xq, x_scale = self._act_quant(input)

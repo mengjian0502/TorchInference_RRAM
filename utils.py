@@ -105,6 +105,52 @@ def prepare_data_loaders(data_path, train_batch_size, eval_batch_size):
 
     return data_loader, data_loader_test
 
+def weightRegularizer(model, nbit):
+    Loss = 0
+    z_typical = {'4bit': [0.077, 1.013], '8bit':[0.027, 1.114]}
+    z = z_typical[f'{int(nbit)}bit']
+    ratio = 0.3
+    remained_ele = 0.1
+    for name, module in model.named_modules():
+        if isinstance(module, QConv2d):
+            w = module.weight
+            m = w.data.abs().mean()
+            std = w.data.std()
+            alpha_w = 1/z[0] * std - z[1]/z[0] * m
+            
+            # conservative regularization
+            idx = w.abs().lt(alpha_w*ratio)
+            ibx = idx.float()
+            perc = ibx[ibx.eq(1.)].numel() / w.numel()
+            if perc > remained_ele:
+                wr = w[idx]
+                Loss += torch.sum((wr.abs() - alpha_w)**2)
+            else:
+                continue
+    return Loss
+
+def sensitivity(model, nbit):
+    z_typical = {'4bit': [0.077, 1.013], '8bit':[0.027, 1.114]}
+    z = z_typical[f'{int(nbit)}bit']
+    ratio = 0.3
+    total_w = 0
+    total_s = 0
+    for name, module in model.named_modules():
+        if isinstance(module, QConv2d):
+            w = module.weight
+            m = w.data.abs().mean()
+            std = w.data.std()
+            alpha_w = 1/z[0] * std - z[1]/z[0] * m
+            # sensitive index
+            idx = w.abs().lt(alpha_w*ratio).float()
+            # print("{} alpha={}; wabs max = {}".format(ratio, alpha_w*ratio, w.abs().max()))
+            
+            # accumulate
+            total_s += idx[idx.eq(1.)].numel()
+            total_w += w.numel()
+    sp = total_s / total_w
+    return sp
+
 def train(trainloader, net, criterion, optimizer, epoch, args):
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -139,6 +185,10 @@ def train(trainloader, net, criterion, optimizer, epoch, args):
                     alpha.append(param.item())
                     reg_alpha += param.item() ** 2
             loss += a_lambda * (reg_alpha)
+
+        if args.swipe_train:
+            # import pdb;pdb.set_trace()
+            loss += args.lambda_swipe * weightRegularizer(net, args.wbit)
 
         optimizer.zero_grad()
         loss.backward()

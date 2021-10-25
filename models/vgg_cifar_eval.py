@@ -20,7 +20,7 @@ def make_layers(cfg, batch_norm=False):
     return nn.Sequential(*layers)
 
 
-def make_layers_quant(cfg, batch_norm=False, wbit=4, abit=4, alpha_init=10, ADCprecision=5, cellBit=2, subArray=128, swipe_ll=0):
+def make_layers_quant(cfg, batch_norm=False, wbit=4, abit=4, alpha_init=10, ADCprecision=5, cellBit=2, subArray=128, sensitive_lv=0):
     layers = list()
     in_channels = 3
     for v in cfg:
@@ -31,7 +31,7 @@ def make_layers_quant(cfg, batch_norm=False, wbit=4, abit=4, alpha_init=10, ADCp
                 conv2d = QConv2d(in_channels, v, kernel_size=3, padding=1, bias=False, wbit=wbit, abit=abit)
             else:
                 conv2d = RRAMConv2d(in_channels, v, kernel_size=3, padding=1, bias=False, 
-                                    wl_input=abit,wl_weight=wbit, subArray=subArray, inference=1, cellBit=cellBit, ADCprecision=ADCprecision, swipe_ll=swipe_ll)
+                                    wl_input=abit,wl_weight=wbit, subArray=subArray, inference=1, cellBit=cellBit, ADCprecision=ADCprecision, sensitive_lv=sensitive_lv)
             if batch_norm:
                 layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
             else:
@@ -83,10 +83,10 @@ class VGG(nn.Module):
 
 
 class VGG_quant(nn.Module):
-    def __init__(self, num_classes=10, depth=16, batch_norm=False, wbit=4, abit=4, alpha_init=10, ADCprecision=5, cellBit=2, subArray=128, swipe_ll=0):
+    def __init__(self, num_classes=10, depth=16, batch_norm=False, wbit=4, abit=4, alpha_init=10, ADCprecision=5, cellBit=2, subArray=128, sensitive_lv=0):
         super(VGG_quant, self).__init__()
         self.features = make_layers_quant(cfg[depth], batch_norm, wbit=wbit, abit=abit, 
-            subArray=subArray, alpha_init=alpha_init, ADCprecision=ADCprecision, cellBit=cellBit, swipe_ll=swipe_ll)
+            subArray=subArray, alpha_init=alpha_init, ADCprecision=ADCprecision, cellBit=cellBit, sensitive_lv=sensitive_lv)
         if depth == 7:
             self.classifier = nn.Sequential(
                 QLinear(8192, 1024, wbit=wbit, abit=abit),

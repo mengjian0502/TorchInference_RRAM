@@ -75,7 +75,7 @@ parser.add_argument('--col_size', type=int, default=16, help='Column size of the
 parser.add_argument('--cellBit', type=int, default=2, help='precision of the rram cell')
 parser.add_argument('--adc_prec', type=int, default=5, help='adc precision')
 parser.add_argument('--subArray', type=int, default=128, help='subarray size')
-parser.add_argument('--swipe_ll', type=int, nargs='+', default=[7,8,9],
+parser.add_argument('--sensitive_lv', type=int, nargs='+', default=[7,8,9],
                     help='swipe sensitive levels')
 args = parser.parse_args()
 
@@ -157,7 +157,8 @@ def main():
     logger.info('==> Building model..\n')
     model_cfg = getattr(models, args.model)
     model_cfg.kwargs.update({"num_classes": num_classes, "wbit": args.wbit, "abit":args.abit, 
-            "alpha_init": args.alpha_init, "ADCprecision":args.adc_prec, "cellBit":args.cellBit, "swipe_ll":args.swipe_ll})
+            "alpha_init": args.alpha_init, "ADCprecision":args.adc_prec, "cellBit":args.cellBit, "sensitive_lv":args.sensitive_lv})
+    # model_cfg.kwargs.update({"num_classes": num_classes, "wbit": args.wbit, "abit":args.abit, "alpha_init": args.alpha_init, "wqmode": "symm"})
     net = model_cfg.base(*model_cfg.args, **model_cfg.kwargs) 
 
     logger.info(net)

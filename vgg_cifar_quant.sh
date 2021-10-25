@@ -15,12 +15,14 @@ batch_size=128
 optimizer=SGD
 wbit=4
 abit=4
-mode=sawb
+wqmethod=sawb
+wqmode=symm
 
-wd=1e-4
+wd=0.0
+lambda_swipe=1e-4
 lr=0.05
 
-save_path="./save/${model}/${model}_w${wbit}_a${abit}_mode_${mode}_wd${wd}/"
+save_path="./save/${model}/${model}_w${wbit}_a${abit}_mode_${wqmethod}_${wqmode}_wd${wd}_lambda_swipe${lambda_swipe}_swipe_train_th/"
 log_file="${model}_w${wbit}_a${abit}_mode${mode}_wd${wd}.log"
 
 $PYTHON -W ignore train.py --dataset ${dataset} \
@@ -37,6 +39,9 @@ $PYTHON -W ignore train.py --dataset ${dataset} \
     --wd ${wd} \
     --wbit ${wbit} \
     --abit ${abit} \
-    --q_mode ${mode} \
+    --q_mode ${wqmethod} \
     --a_lambda ${wd} \
+    --wqmode ${wqmode} \
+    --swipe_train \
+    --lambda_swipe ${lambda_swipe} \
     --clp;

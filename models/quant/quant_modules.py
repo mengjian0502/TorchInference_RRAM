@@ -21,34 +21,44 @@ def dorefa_quant(x, nbit, dequantize=True):
         xq = 2 * xq - qrange
     return xq
 
-def stats_quant(x, nbit, dequantize=True):
+def stats_quant(x, nbit, qmode='symm', dequantize=True):
     z_typical = {'4bit': [0.077, 1.013], '8bit':[0.027, 1.114]}
     z = z_typical[f'{int(nbit)}bit']
-    n_lv = 2 ** (nbit - 1) - 1
 
     m = x.abs().mean()
     std = x.std()
-    alpha_w = 1/z[0] * std - z[1]/z[0] * m
-    
+
+    if qmode == 'symm':
+        n_lv = 2 ** (nbit - 1) - 1
+        alpha_w = 1/z[0] * std - z[1]/z[0] * m
+    elif qmode == 'asymm':
+        n_lv = (2 ** (nbit) - 1)/2
+        alpha_w = 2*m
+    else:
+        raise NotImplemented
+
     x = x.clamp(-alpha_w.item(), alpha_w.item())
     scale = n_lv / alpha_w
     
     xq = x.mul(scale).round()
+    if len(xq.unique()) > 2**nbit:
+        xq = xq.clamp(-2**nbit//2, 2**nbit//2-1)
+    # import pdb;pdb.set_trace()
     if dequantize:
         xq = xq.div(scale)
     return xq, scale
 
 class RoundQ(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, input, wbit):
-        input_q, scale = stats_quant(input, wbit)
+    def forward(ctx, input, wbit, qmode):
+        input_q, scale = stats_quant(input, wbit, qmode)
         ctx.save_for_backward(input)
         return input_q
     
     @staticmethod
     def backward(ctx, grad_output):
         grad_input = grad_output.clone()
-        return grad_input, None
+        return grad_input, None, None
 
 class RoundUQ(torch.autograd.Function):
     @staticmethod
@@ -75,15 +85,20 @@ class RoundUQ(torch.autograd.Function):
 
 class WQ(nn.Module):
     """
-    DoreFa quantizer
+    Weight quantizer
     """
-    def __init__(self, wbit):
+    def __init__(self, wbit, qmode='symm'):
         super(WQ, self).__init__()
         self.wbit = wbit
+        self.qmode = qmode
     
     def forward(self, x):
-        weight_q = RoundQ.apply(x, self.wbit)
+        weight_q = RoundQ.apply(x, self.wbit, self.qmode)
         return weight_q
+
+    def extra_repr(self):
+        return super(WQ, self).extra_repr() + "qmode={}".format(self.qmode)
+
 
 class AQ(nn.Module):
     def __init__(self, abit, act_alpha):
@@ -98,11 +113,11 @@ class AQ(nn.Module):
 
 class QConv2d(nn.Conv2d):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-                 padding=0, dilation=1, groups=1, bias=False, wbit=8, abit=8, alpha_init=10.0):
+                 padding=0, dilation=1, groups=1, bias=False, wbit=8, abit=8, alpha_init=10.0, wqmode='symm'):
         super(QConv2d, self).__init__(in_channels, out_channels, kernel_size,
                                       stride=stride, padding=padding, dilation=dilation, groups=groups,
                                       bias=bias)
-        self.weight_quant = WQ(wbit=wbit)
+        self.weight_quant = WQ(wbit=wbit, qmode=wqmode)
         self.act_quant = AQ(abit, act_alpha=torch.tensor(alpha_init))
 
         self.wbit = wbit

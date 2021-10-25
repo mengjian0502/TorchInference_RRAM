@@ -4,14 +4,14 @@ import torch.nn as nn
 from .quant import QConv2d, QLinear
 
 
-def make_layers_quant(cfg, batch_norm=False, wbit=4, abit=4, alpha_init=10):
+def make_layers_quant(cfg, batch_norm=False, wbit=4, abit=4, alpha_init=10, wqmode='symm'):
     layers = list()
     in_channels = 3
     for v in cfg:
         if v == 'M':
             layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
         else:
-            conv2d = QConv2d(in_channels, v, kernel_size=3, padding=1, bias=False, wbit=wbit, abit=abit, alpha_init=alpha_init)
+            conv2d = QConv2d(in_channels, v, kernel_size=3, padding=1, bias=False, wbit=wbit, abit=abit, alpha_init=alpha_init, wqmode=wqmode)
             if batch_norm:
                 layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
             else:
@@ -28,9 +28,9 @@ cfg = {
 }
 
 class VGG_quant(nn.Module):
-    def __init__(self, num_classes=10, depth=16, batch_norm=False, wbit=4, abit=4, alpha_init=10):
+    def __init__(self, num_classes=10, depth=16, batch_norm=False, wbit=4, abit=4, alpha_init=10, wqmode='symm'):
         super(VGG_quant, self).__init__()
-        self.features = make_layers_quant(cfg[depth], batch_norm, wbit=wbit, abit=abit, alpha_init=alpha_init)
+        self.features = make_layers_quant(cfg[depth], batch_norm, wbit=wbit, abit=abit, alpha_init=alpha_init, wqmode=wqmode)
         if depth == 7:
             self.classifier = nn.Sequential(
                 QLinear(8192, 1024, wbit=wbit, abit=abit),

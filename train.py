@@ -65,10 +65,15 @@ parser.add_argument('--abit', type=int, default=4, help='activation precision')
 parser.add_argument('--alpha_init', type=int, default=10., help='initial activation clipping')
 parser.add_argument('--q_mode', type=str, default="mean", help='weight quantization mode')
 parser.add_argument('--k', type=int, default=2, help='coefficient of quantization boundary')
+parser.add_argument('--wqmode', default='symm', type=str, help='symmetric or asymmetric qmode')
 
 # activation clipping(PACT)
 parser.add_argument('--clp', dest='clp', action='store_true', help='using clipped relu in each stage')
 parser.add_argument('--a_lambda', type=float, default=0.01, help='The parameter of alpha L2 regularization')
+
+# swipe trainng
+parser.add_argument('--swipe_train', dest='swipe_train', action='store_true', help='change the weight distribution to reduce the programming sensitivity')
+parser.add_argument('--lambda_swipe', type=float, default=0.01, help='The parameter of alpha L2 regularization for swipe')
 
 args = parser.parse_args()
 
@@ -149,7 +154,7 @@ def main():
     # Prepare the model
     logger.info('==> Building model..\n')
     model_cfg = getattr(models, args.model)
-    model_cfg.kwargs.update({"num_classes": num_classes, "wbit": args.wbit, "abit":args.abit, "alpha_init": args.alpha_init})
+    model_cfg.kwargs.update({"num_classes": num_classes, "wbit": args.wbit, "abit":args.abit, "alpha_init": args.alpha_init, "wqmode": args.wqmode})
     # model_cfg.kwargs.update({"num_classes": num_classes})
     net = model_cfg.base(*model_cfg.args, **model_cfg.kwargs) 
     logger.info(net)
@@ -201,7 +206,7 @@ def main():
     start_time = time.time()
     epoch_time = AverageMeter()
     best_acc = 0.
-    columns = ['ep', 'lr', 'tr_loss', 'tr_acc', 'tr_time', 'te_loss', 'te_acc', 'best_acc', 'grp_spar', 'ovall_spar', 'spar_groups']
+    columns = ['ep', 'lr', 'tr_loss', 'tr_acc', 'tr_time', 'te_loss', 'te_acc', 'best_acc', 'sensitivity']
 
     quantization_bound = []
     clipped_bound = []
@@ -239,9 +244,12 @@ def main():
         e_time = time.time() - start_time
         epoch_time.update(e_time)
         start_time = time.time()
+
+        # compute percentage of the sensitive weights
+        sp = sensitivity(net, args.wbit)
         
         values = [epoch + 1, optimizer.param_groups[0]['lr'], train_results['loss'], train_results['acc'], 
-            e_time, val_loss, test_acc, best_acc]
+            e_time, val_loss, test_acc, best_acc, sp]
 
         print_table(values, columns, epoch, logger)
         print(need_time)

@@ -7,6 +7,7 @@ import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
 import warnings
 
 def binary2dec(wbit, weight_b, cellBit):
@@ -19,7 +20,7 @@ def binary2dec(wbit, weight_b, cellBit):
     return weight_int
 
 def main():
-    ckpt = torch.load("./save/vgg7_quant/vgg7_quant_w4_a4_mode_sawb_symm_wd0.0_lambda_swipe1e-4_swipe_train_th/model_best.pth.tar")
+    ckpt = torch.load("./save/vgg7_quant/vgg7_quant_w4_a4_mode_sawb_wd1e-4/model_best.pth.tar")
     state_dict = ckpt["state_dict"]
     
     # print weights
@@ -56,13 +57,21 @@ def main():
             print(layer_element)
             level_element += np.array(layer_element)
     perc = level_element / total_w * 100
+    
+    table = {
+        "wlevel": np.array([ii for ii in range(15)]),
+        "percentage":np.array(perc)
+    }
 
+    variable = pd.DataFrame(table, columns=['wlevel','percentage'])
+    variable.to_csv('./save/vgg7_quant/vgg7_quant_w4_a4_mode_sawb_wd1e-4/weight_dist.csv', index=False)
+    
     swipe_perc = 0
     swipe = [6,7,8]
     for ii, p in enumerate(perc):
         if ii in swipe:
             swipe_perc += p
-    print("Percentage of {} = {:.2f}".format(swipe, swipe_perc))
+    print("Percentage of {} = {:.2f}%".format(swipe, swipe_perc))
 
 if __name__ == '__main__':
     main()

@@ -105,11 +105,10 @@ def prepare_data_loaders(data_path, train_batch_size, eval_batch_size):
 
     return data_loader, data_loader_test
 
-def weightRegularizer(model, nbit):
+def weightRegularizer(model, nbit, ratio):
     Loss = 0
     z_typical = {'4bit': [0.077, 1.013], '8bit':[0.027, 1.114]}
     z = z_typical[f'{int(nbit)}bit']
-    ratio = 0.3
     remained_ele = 0.1
     for name, module in model.named_modules():
         if isinstance(module, QConv2d):
@@ -129,10 +128,9 @@ def weightRegularizer(model, nbit):
                 continue
     return Loss
 
-def sensitivity(model, nbit):
+def sensitivity(model, nbit, ratio):
     z_typical = {'4bit': [0.077, 1.013], '8bit':[0.027, 1.114]}
     z = z_typical[f'{int(nbit)}bit']
-    ratio = 0.3
     total_w = 0
     total_s = 0
     for name, module in model.named_modules():
@@ -188,7 +186,7 @@ def train(trainloader, net, criterion, optimizer, epoch, args):
 
         if args.swipe_train:
             # import pdb;pdb.set_trace()
-            loss += args.lambda_swipe * weightRegularizer(net, args.wbit)
+            loss += args.lambda_swipe * weightRegularizer(net, args.wbit, args.reg_ratio)
 
         optimizer.zero_grad()
         loss.backward()

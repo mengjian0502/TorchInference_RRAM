@@ -22,8 +22,8 @@ cellbit=1
 
 save_path="./save/${model}/${model}_w${wbit}_a${abit}_mode_${mode}/"
 log_file="${model}_w${wbit}_a${abit}_mode${mode}_adc${adc}bit_cell${cellbit}bit.log"
-# pretrained_model="./save/vgg7_quant/vgg7_quant_w4_a4_mode_sawb_wd1e-4/model_best.pth.tar"
-pretrained_model="./save/vgg7_quant/vgg7_quant_w4_a4_mode_sawb_symm_wd0.0_lambda_swipe1e-4_swipe_train_th/model_best.pth.tar"
+pretrained_model="./save/vgg7_quant/vgg7_quant_w4_a4_mode_sawb_wd1e-4/model_best.pth.tar" # 92.77
+# pretrained_model="./save/vgg7_quant/vgg7_quant_w4_a4_mode_sawb_symm_wd0.0_lambda_swipe1e-4_swipe_train_th/model_best.pth.tar" # 92.1
 
 $PYTHON -W ignore inference.py --dataset ${dataset} \
     --data_path ./dataset/ \
@@ -38,5 +38,5 @@ $PYTHON -W ignore inference.py --dataset ${dataset} \
     --cellBit ${cellbit} \
     --adc_prec ${adc} \
     --fine_tune \
-    --sensitive_lv 6 7 8 9 \
+    --sensitive_lv 6 7 8 9 10 \
     --evaluate;

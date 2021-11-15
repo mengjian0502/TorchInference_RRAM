@@ -48,16 +48,18 @@ def program_noise_cond(weight_q, weight_b, hrs, lrs, sensitive_lv):
         wbin_ii = weight_b[:, idx_4b]
         
         # noises
-        noise = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/noSWIPE_25Times_raw/level{ii}_raw.npy")
-        # swipe = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/DNN_SWIPE_101021/Level_4x16_SWIPE_250nPW_chip14_raw_in_16lvl_10091346/level{ii}_raw.npy")
+        noise = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/noSWIPE_25Times_raw/level{ii}_raw.npy") # 1.66
         # swipe = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/Level_4x16_SWIPE_250nPW_chip14_raw_in_16lvl/level{ii}_raw.npy")
         
         # rescale the programming noise with new lrs （1.66 to 1.11)
-        noise = noise * (1.11e-4/1.66e-4)
+        # noise = noise * (1.11e-4/1.66e-4)
         # swipe = swipe * (1.11e-4/1.66e-4)
         
         # noise = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/DNN_SWIPE_101021/Level_4x16_noSWIPE_250nPW_chip14_raw_in_16lvl_10080928/level{ii}_raw.npy")
-        swipe = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/DNN_SWIPE_102021/Level_4x16_SWIPE_250nPW_chip14_raw_in_16lvl_10201845/level{ii}_raw.npy")
+        # swipe = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/DNN_SWIPE_102021/Level_4x16_SWIPE_250nPW_chip14_raw_in_16lvl_10201845/level{ii}_raw.npy")
+        # swipe = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/DNN_SWIPE_102021/09191845/level{ii}_raw.npy")   # 1.11
+        swipe = np.load(f"/home/mengjian/Desktop/ASU_research/SWIPE_analysis/prob/SWIPE/DNN_SWIPE_102021/Level_4x16_SWIPE_250nPW_chip14_raw_in_16lvl_10201845/level{ii}_raw.npy")   # 1.11
+        swipe = swipe * (1.66e-4/1.11e-4)
         
         
         # sizes
@@ -112,7 +114,8 @@ class RRAMConv2d(nn.Conv2d):
 
         # conductance
         self.hrs = 1e-6
-        self.lrs = 1.11e-04
+        # self.lrs = 1.11e-04
+        self.lrs = 1.66e-04
         self.nonideal_unit = self.lrs - self.hrs
         self.sensitive_lv = sensitive_lv
     

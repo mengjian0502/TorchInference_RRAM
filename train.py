@@ -74,6 +74,7 @@ parser.add_argument('--a_lambda', type=float, default=0.01, help='The parameter 
 # swipe trainng
 parser.add_argument('--swipe_train', dest='swipe_train', action='store_true', help='change the weight distribution to reduce the programming sensitivity')
 parser.add_argument('--lambda_swipe', type=float, default=0.01, help='The parameter of alpha L2 regularization for swipe')
+parser.add_argument('--reg_ratio', type=float, default=0.0, help='Take the <0.3*alpha value into L2 regularizer')
 
 args = parser.parse_args()
 
@@ -206,11 +207,10 @@ def main():
     start_time = time.time()
     epoch_time = AverageMeter()
     best_acc = 0.
-    columns = ['ep', 'lr', 'tr_loss', 'tr_acc', 'tr_time', 'te_loss', 'te_acc', 'best_acc', 'sensitivity']
-
-    quantization_bound = []
-    clipped_bound = []
-    layer_thre = []
+    columns = ['ep', 'lr', 'tr_loss', 'tr_acc', 'tr_time', 'te_loss', 'te_acc', 'best_acc']
+    if args.swipe_train:
+        columns += ['sensitivity']
+    
     for epoch in range(start_epoch, start_epoch+args.epochs):
         need_hour, need_mins, need_secs = convert_secs2time(
             epoch_time.avg * (args.epochs - epoch))
@@ -246,10 +246,14 @@ def main():
         start_time = time.time()
 
         # compute percentage of the sensitive weights
-        sp = sensitivity(net, args.wbit)
+        if args.swipe_train:
+            sp = sensitivity(net, args.wbit, args.reg_ratio)
         
         values = [epoch + 1, optimizer.param_groups[0]['lr'], train_results['loss'], train_results['acc'], 
-            e_time, val_loss, test_acc, best_acc, sp]
+            e_time, val_loss, test_acc, best_acc]
+        
+        if args.swipe_train:
+            values += [sp]
 
         print_table(values, columns, epoch, logger)
         print(need_time)
